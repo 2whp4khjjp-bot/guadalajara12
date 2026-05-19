@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guadalajara 12</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cream: #FAF7F2; --sand: #E8E0D4; --terracotta: #C4714F; --terracotta-dark: #A85A3A;
+    --forest: #3A5244; --charcoal: #2C2C2C; --mid: #7A7065; --light: #B5ADA3; --white: #FFFFFF;
+    --wa: #25D366; --wa-dark: #1ebe5d;
+    --email: #4A6CF7; --email-dark: #3451d1;
+    --select-start: #2563EB; --select-range: rgba(37,99,235,0.12);
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--charcoal); min-height: 100vh; padding-bottom: 120px; }
+
+  /* HEADER */
+  header { background: var(--forest); padding: 2.5rem 2rem 2rem; text-align: center; position: relative; overflow: hidden; }
+  header::before { content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px; background:rgba(255,255,255,0.04); border-radius:50%; }
+  header::after  { content:''; position:absolute; bottom:-80px; left:-40px; width:250px; height:250px; background:rgba(196,113,79,0.15); border-radius:50%; }
+  .property-name { font-family:'Playfair Display',serif; font-size:clamp(1.8rem,5vw,2.8rem); font-weight:600; color:var(--white); letter-spacing:-0.02em; position:relative; z-index:2; }
+  .header-subtitle { color:rgba(255,255,255,0.6); font-size:0.9rem; font-weight:300; margin-top:0.4rem; letter-spacing:0.08em; text-transform:uppercase; }
+  .sync-badge { position:absolute; bottom:1rem; right:1rem; z-index:3; font-size:0.7rem; color:rgba(255,255,255,0.5); display:none; align-items:center; gap:0.35rem; }
+  .sync-dot { width:6px; height:6px; border-radius:50%; background:#7BC67A; box-shadow:0 0 6px rgba(123,198,122,0.6); }
+
+  /* LEGEND */
+  .legend { display:flex; justify-content:center; gap:1.5rem; flex-wrap:wrap; padding:1rem; background:var(--sand); border-bottom:1px solid rgba(0,0,0,0.06); }
+  .legend-item { display:flex; align-items:center; gap:0.5rem; font-size:0.78rem; font-weight:500; color:var(--mid); text-transform:uppercase; letter-spacing:0.06em; }
+  .legend-dot { width:12px; height:12px; border-radius:3px; flex-shrink:0; }
+
+  /* SELECTION HINT */
+  .selection-hint { text-align:center; font-size:0.82rem; color:var(--mid); padding:0.75rem 1rem; background:var(--sand); border-bottom:1px solid rgba(0,0,0,0.06); min-height:2.8rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; }
+  .hint-dates { font-weight:600; color:var(--charcoal); }
+  .hint-clear { background:none; border:none; cursor:pointer; color:var(--light); font-size:1rem; line-height:1; padding:0.2rem; border-radius:4px; transition:color 0.15s; }
+  .hint-clear:hover { color:var(--terracotta); }
+
+  /* MAIN */
+  main { max-width:900px; margin:0 auto; padding:2rem 1rem 2rem; }
+  .year-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:2rem; }
+  .year-nav h2 { font-family:'Playfair Display',serif; font-size:1.6rem; font-weight:400; font-style:italic; }
+  .nav-btn { background:var(--white); border:1px solid var(--sand); color:var(--charcoal); width:40px; height:40px; border-radius:50%; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center; transition:all 0.15s; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+  .nav-btn:hover { background:var(--forest); border-color:var(--forest); color:var(--white); transform:scale(1.05); }
+  .months-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:1.5rem; }
+
+  /* MONTH CARD */
+  .month-card { background:var(--white); border-radius:16px; overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,0.06); transition:box-shadow 0.2s; }
+  .month-card:hover { box-shadow:0 4px 20px rgba(0,0,0,0.1); }
+  .month-header { background:var(--forest); padding:0.9rem 1.2rem; color:var(--white); font-size:0.85rem; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; }
+  .cal-grid { padding:1rem; }
+  .day-headers { display:grid; grid-template-columns:repeat(7,1fr); margin-bottom:0.4rem; }
+  .day-header { text-align:center; font-size:0.68rem; font-weight:500; color:var(--light); letter-spacing:0.05em; text-transform:uppercase; padding:0.2rem 0; }
+  .days-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+  .day-cell { aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-weight:400; border-radius:6px; cursor:pointer; transition:all 0.12s; position:relative; user-select:none; }
+  .day-cell.empty { cursor:default; }
+  .day-cell.past  { color:var(--light); cursor:default; }
+  .day-cell.available { background:rgba(58,82,68,0.1); color:var(--forest); font-weight:500; }
+  .day-cell.available:hover { background:var(--forest); color:var(--white); }
+  .day-cell.booked { background:rgba(196,113,79,0.15); color:var(--terracotta-dark); font-weight:500; cursor:not-allowed; }
+  .day-cell.booked::after { content:''; position:absolute; bottom:4px; left:50%; transform:translateX(-50%); width:4px; height:4px; border-radius:50%; background:var(--terracotta); }
+  .day-cell.today { outline:2px solid var(--forest); outline-offset:-2px; font-weight:700; }
+  .day-cell.from-ical { cursor:not-allowed !important; }
+  .day-cell.sel-start, .day-cell.sel-end { background:var(--select-start) !important; color:white !important; font-weight:700 !important; border-radius:8px; z-index:1; }
+  .day-cell.sel-range { background:var(--select-range) !important; color:var(--select-start) !important; border-radius:0; }
+
+  .stats-bar { display:grid; grid-template-columns:1fr 1fr; border-top:1px solid var(--sand); }
+  .stat { padding:0.7rem 1rem; text-align:center; }
+  .stat:first-child { border-right:1px solid var(--sand); }
+  .stat-number { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:600; display:block; }
+  .stat-number.avail { color:var(--forest); }
+  .stat-number.taken { color:var(--terracotta); }
+  .stat-label { font-size:0.65rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--light); font-weight:500; }
+
+  /* WHATSAPP BAR */
+  .wa-bar { position:fixed; bottom:0; left:0; right:0; z-index:500; background:var(--white); border-top:1px solid var(--sand); padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; box-shadow:0 -4px 20px rgba(0,0,0,0.08); transform:translateY(100%); transition:transform 0.35s cubic-bezier(0.34,1.4,0.64,1); }
+  .wa-bar.visible { transform:translateY(0); }
+  .wa-bar-info { flex:1; min-width:0; }
+  .wa-bar-label { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--light); font-weight:500; }
+  .wa-bar-dates { font-size:0.95rem; font-weight:600; color:var(--charcoal); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:0.15rem; }
+  .wa-bar-nights { font-size:0.78rem; color:var(--mid); margin-top:0.1rem; }
+  .wa-bar-btns { display:flex; gap:0.6rem; flex-shrink:0; }
+  .wa-btn { color:white; border:none; border-radius:12px; padding:0.85rem 1.2rem; font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:0.45rem; transition:all 0.15s; white-space:nowrap; flex-shrink:0; }
+  .wa-btn.whatsapp { background:var(--wa); box-shadow:0 2px 12px rgba(37,211,102,0.35); }
+  .wa-btn.whatsapp:hover { background:var(--wa-dark); transform:translateY(-1px); }
+  .wa-btn.email { background:var(--email); box-shadow:0 2px 12px rgba(74,108,247,0.3); }
+  .wa-btn.email:hover { background:var(--email-dark); transform:translateY(-1px); }
+  .wa-btn svg { width:17px; height:17px; fill:white; flex-shrink:0; }
+  .wa-bar-cancel { background:none; border:none; color:var(--light); cursor:pointer; font-size:1.2rem; padding:0.3rem; transition:color 0.15s; flex-shrink:0; }
+  .wa-bar-cancel:hover { color:var(--terracotta); }
+  @media(max-width:480px) { .wa-btn span { display:none; } .wa-btn { padding:0.85rem; } }
+
+  /* TOAST */
+  .toast { position:fixed; bottom:5rem; left:50%; transform:translateX(-50%) translateY(20px); background:var(--charcoal); color:var(--white); padding:0.7rem 1.4rem; border-radius:100px; font-size:0.82rem; font-weight:500; opacity:0; transition:all 0.3s; pointer-events:none; z-index:600; white-space:nowrap; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ADMIN OVERLAY */
+  .admin-overlay { position:fixed; inset:0; z-index:1000; background:rgba(16,16,16,0.8); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+  .admin-overlay.visible { opacity:1; pointer-events:all; }
+  .admin-panel { background:#181818; border:1px solid #2e2e2e; border-radius:20px; padding:2.5rem; width:min(480px,92vw); transform:translateY(24px) scale(0.97); transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1); color:#F0EDE8; }
+  .admin-overlay.visible .admin-panel { transform:translateY(0) scale(1); }
+  .admin-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:2rem; }
+  .admin-title { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:400; }
+  .admin-subtitle { font-size:0.73rem; color:#555; margin-top:0.2rem; letter-spacing:0.05em; }
+  .admin-close { background:#252525; border:none; color:#777; width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
+  .admin-close:hover { background:#333; color:#F0EDE8; }
+  .admin-label { font-size:0.73rem; text-transform:uppercase; letter-spacing:0.08em; color:#777; margin-bottom:0.45rem; display:block; }
+  .admin-input { width:100%; background:#222; border:1px solid #333; border-radius:10px; padding:0.85rem 1rem; color:#F0EDE8; font-family:'DM Sans',sans-serif; font-size:0.9rem; outline:none; transition:border-color 0.2s; }
+  .admin-input:focus { border-color:#C4714F; }
+  .admin-input::placeholder { color:#484848; }
+  .login-form { display:flex; flex-direction:column; gap:1rem; }
+  .login-error { color:#e07070; font-size:0.8rem; text-align:center; min-height:1.2em; }
+  .admin-btn { background:var(--terracotta); color:var(--white); border:none; border-radius:10px; padding:0.9rem 1.5rem; font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:500; cursor:pointer; transition:all 0.15s; width:100%; margin-top:0.5rem; }
+  .admin-btn:hover { background:var(--terracotta-dark); transform:translateY(-1px); }
+  .admin-btn:disabled { background:#383838; color:#666; cursor:not-allowed; transform:none; }
+  .admin-btn-sec { background:transparent; color:#777; border:1px solid #2e2e2e; border-radius:10px; padding:0.75rem 1.5rem; font-family:'DM Sans',sans-serif; font-size:0.85rem; cursor:pointer; transition:all 0.15s; width:100%; margin-top:0.3rem; }
+  .admin-btn-sec:hover { border-color:#555; color:#ccc; }
+  .ical-config { display:flex; flex-direction:column; gap:1.2rem; }
+  .ical-status-card { background:#222; border:1px solid #2e2e2e; border-radius:12px; padding:1.2rem; display:flex; align-items:flex-start; gap:1rem; }
+  .ical-status-icon { font-size:1.5rem; flex-shrink:0; margin-top:0.1rem; }
+  .ical-status-text { font-size:0.85rem; color:#999; line-height:1.5; }
+  .ical-status-text strong { color:#F0EDE8; display:block; margin-bottom:0.2rem; }
+  .ical-url-display { font-family:monospace; font-size:0.7rem; color:#555; word-break:break-all; margin-top:0.35rem; }
+  .how-to { background:#1e2820; border:1px solid #263320; border-radius:10px; padding:1rem 1.2rem; font-size:0.78rem; color:#7aab84; line-height:1.75; }
+  .how-to strong { color:#9ac8a0; }
+  .ical-actions { display:flex; flex-direction:column; gap:0.4rem; }
+  .admin-meta { font-size:0.7rem; color:#444; text-align:center; letter-spacing:0.04em; }
+  .spinner { display:inline-block; width:13px; height:13px; border:2px solid rgba(255,255,255,0.2); border-top-color:white; border-radius:50%; animation:spin 0.7s linear infinite; margin-right:0.5rem; vertical-align:middle; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @media(max-width:600px) { .months-grid { grid-template-columns:1fr; } .wa-bar { padding:0.85rem 1rem; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div style="position:relative;z-index:2">
+    <div class="property-name">Guadalajara 12</div>
+    <p class="header-subtitle">Calendario de disponibilidad</p>
+  </div>
+  <div class="sync-badge" id="syncBadge">
+    <span class="sync-dot"></span>
+    <span id="syncLabel">iCal sincronizado</span>
+  </div>
+</header>
+
+<div class="legend">
+  <div class="legend-item"><span class="legend-dot" style="background:rgba(58,82,68,0.3)"></span>Disponible</div>
+  <div class="legend-item"><span class="legend-dot" style="background:var(--terracotta)"></span>Ocupado</div>
+  <div class="legend-item"><span class="legend-dot" style="background:#2563EB"></span>Tu selección</div>
+  <div class="legend-item"><span class="legend-dot" style="background:var(--sand);border:2px solid var(--forest)"></span>Hoy</div>
+</div>
+
+<div class="selection-hint" id="selectionHint">
+  <span id="hintText">Toca un día disponible para seleccionar fechas</span>
+</div>
+
+<main>
+  <div class="year-nav">
+    <button class="nav-btn" id="prevYear">‹</button>
+    <h2 id="yearLabel"></h2>
+    <button class="nav-btn" id="nextYear">›</button>
+  </div>
+  <div class="months-grid" id="monthsGrid"></div>
+</main>
+
+<div class="wa-bar" id="waBar">
+  <button class="wa-bar-cancel" id="waCancel">✕</button>
+  <div class="wa-bar-info">
+    <div class="wa-bar-label">Solicitar reserva</div>
+    <div class="wa-bar-dates" id="waBarDates">—</div>
+    <div class="wa-bar-nights" id="waBarNights"></div>
+  </div>
+  <div class="wa-bar-btns">
+    <button class="wa-btn whatsapp" id="waBtn">
+      <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      <span>WhatsApp</span>
+    </button>
+    <button class="wa-btn email" id="emailBtn">
+      <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+      <span>Email</span>
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ADMIN OVERLAY -->
+<div class="admin-overlay" id="adminOverlay">
+  <div class="admin-panel">
+    <div class="admin-header">
+      <div>
+        <div class="admin-title">Administración</div>
+        <div class="admin-subtitle">Acceso restringido al propietario</div>
+      </div>
+      <button class="admin-close" id="adminClose">✕</button>
+    </div>
+
+    <div id="viewLogin">
+      <div class="login-form">
+        <div>
+          <label class="admin-label">Contraseña de acceso</label>
+          <input type="password" class="admin-input" id="adminPwd" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <p class="login-error" id="loginError"></p>
+        <button class="admin-btn" id="loginBtn">Entrar</button>
+      </div>
+    </div>
+
+    <div id="viewConfig" style="display:none">
+      <div class="ical-config">
+        <div class="ical-status-card">
+          <span class="ical-status-icon" id="icalIcon">📅</span>
+          <div class="ical-status-text">
+            <strong id="icalStatusTitle">Sin calendario vinculado</strong>
+            <span id="icalStatusDesc">Añade la URL iCal de tu anuncio en Airbnb.</span>
+            <div class="ical-url-display" id="icalUrlDisplay"></div>
+          </div>
+        </div>
+        <div>
+          <label class="admin-label">URL iCal de Airbnb</label>
+          <input type="url" class="admin-input" id="icalUrlInput" placeholder="https://www.airbnb.com/calendar/ical/…">
+        </div>
+        <div class="how-to">
+          <strong>¿Dónde encontrar la URL?</strong><br>
+          Airbnb → Tu alojamiento → Calendario →<br>
+          Disponibilidad → <em>Exportar calendario</em> → Copiar enlace .ics
+        </div>
+        <div class="ical-actions">
+          <button class="admin-btn" id="syncBtn">Sincronizar calendario</button>
+          <button class="admin-btn-sec" id="clearBtn">Desvincular calendario</button>
+          <button class="admin-btn-sec" id="logoutBtn">Cerrar sesión</button>
+        </div>
+        <p class="admin-meta" id="adminMeta"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+//  CONFIGURACIÓN
+// ════════════════════════════════════════════
+const ADMIN_PASSWORD  = 'admin1234';  // ⚠️ Cambia antes de publicar
+const CORS_PROXIES = [
+  url => `/.netlify/functions/ical-proxy?url=${encodeURIComponent(url)}`,
+  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+];
+const WA_NUMBER       = '34659576161';
+const EMAIL_ADDRESS   = 'raulcote7@gmail.com';
+const SUPABASE_URL    = 'https://vkcvbhtnnbqtxpijocbm.supabase.co';
+const SUPABASE_KEY    = 'sb_publishable_Ne4FSQVP6AKIKq1C7lacHw_EOlrwlaf';
+const SUPABASE_ROW_ID = 1; // ID de la fila en la tabla config
+// ════════════════════════════════════════════
+
+const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DAYS   = ['L','M','X','J','V','S','D'];
+
+let displayYear = new Date().getFullYear();
+let manual      = loadJ('avail_manual_v2', {});
+let icalDates   = {};
+let logged      = false;
+let selStart    = null;
+let selEnd      = null;
+
+function loadJ(k, d) { try { return JSON.parse(localStorage.getItem(k)) || d; } catch { return d; } }
+function saveJ(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+
+// ── Supabase helpers ──
+// Supabase: guardar/leer URL iCal (fila 1) y fechas procesadas (fila 2)
+async function sbUpsert(id, value) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/config`, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
+    },
+    body: JSON.stringify({ id, value })
+  });
+  if (!res.ok) throw new Error('Supabase upsert error ' + res.status);
+}
+
+async function sbRead(id) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/config?id=eq.${id}&select=value`, {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+  });
+  if (!res.ok) throw new Error('Supabase read error ' + res.status);
+  const data = await res.json();
+  return data[0]?.value || null;
+}
+
+async function sbDelete(id) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/config?id=eq.${id}`, {
+    method: 'DELETE',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+  });
+  if (!res.ok) throw new Error('Supabase delete error ' + res.status);
+}
+
+// Wrappers para URL (id=1) y fechas (id=2)
+const sbGet     = ()      => sbRead(1);
+const sbSet     = (v)     => sbUpsert(1, v);
+const sbClear   = ()      => Promise.all([sbDelete(1), sbDelete(2)]);
+const sbGetDates = ()     => sbRead(2);
+const sbSetDates = (v)    => sbUpsert(2, v);
+
+// ── Admin shortcuts ──
+document.addEventListener('keydown', e => { if (e.ctrlKey && e.shiftKey && e.key === 'A') openAdmin(); });
+let taps = 0, tapT;
+document.querySelector('header').addEventListener('click', () => {
+  taps++; clearTimeout(tapT);
+  tapT = setTimeout(() => { taps = 0; }, 1500);
+  if (taps >= 5) { taps = 0; openAdmin(); }
+});
+
+// ── Helpers ──
+function toKey(y, m, d) { return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+function isBooked(y, m, d) { const k = toKey(y,m,d); return !!icalDates[k] || !!manual[k]; }
+function sameDay(a, b) { return a && b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
+
+// ── Selection ──
+function handleDayClick(y, m, d) {
+  const dt = new Date(y, m, d);
+  const today = new Date(); today.setHours(0,0,0,0);
+  if (dt < today || isBooked(y, m, d)) { if(isBooked(y,m,d)) showToast('Este día ya está ocupado'); return; }
+
+  if (!selStart || (selStart && selEnd)) {
+    selStart = dt; selEnd = null;
+  } else {
+    if (sameDay(dt, selStart)) { clearSelection(); return; }
+    let s = selStart, e = dt;
+    if (e < s) { let t = s; s = e; e = t; }
+    // Check no booked in range
+    const cur = new Date(s); cur.setDate(cur.getDate()+1);
+    while (cur < e) {
+      if (isBooked(cur.getFullYear(), cur.getMonth(), cur.getDate())) { showToast('Hay días ocupados en ese rango'); return; }
+      cur.setDate(cur.getDate()+1);
+    }
+    selStart = s; selEnd = e;
+  }
+  updateSelectionUI();
+}
+
+function clearSelection() { selStart = null; selEnd = null; updateSelectionUI(); }
+
+function updateSelectionUI() {
+  renderAll();
+  const hint    = document.getElementById('hintText');
+  const waBar   = document.getElementById('waBar');
+
+  if (!selStart) {
+    hint.textContent = 'Toca un día disponible para seleccionar fechas';
+    waBar.classList.remove('visible'); return;
+  }
+  if (!selEnd) {
+    hint.innerHTML = `Entrada: <span class="hint-dates">${fmt(selStart)}</span> — ahora selecciona la salida`;
+    waBar.classList.remove('visible'); return;
+  }
+  const nights = Math.round((selEnd - selStart) / 86400000);
+  hint.innerHTML = `<span class="hint-dates">${fmt(selStart)} → ${fmt(selEnd)}</span> · ${nights} noche${nights!==1?'s':''} <button class="hint-clear" id="hintClear">✕</button>`;
+  document.getElementById('hintClear')?.addEventListener('click', clearSelection);
+  document.getElementById('waBarDates').textContent  = `${fmt(selStart)} → ${fmt(selEnd)}`;
+  document.getElementById('waBarNights').textContent = `${nights} noche${nights!==1?'s':''}`;
+  waBar.classList.add('visible');
+}
+
+function fmt(dt) { return dt.toLocaleDateString('es-ES', { weekday:'short', day:'numeric', month:'short' }); }
+function fmtLong(dt) { return dt.toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' }); }
+
+document.getElementById('waBtn').addEventListener('click', () => {
+  if (!selStart || !selEnd) return;
+  const nights = Math.round((selEnd - selStart) / 86400000);
+  const msg = `Hola! Me gustaría reservar Guadalajara 12.\n\n📅 Entrada: ${fmtLong(selStart)}\n📅 Salida: ${fmtLong(selEnd)}\n🌙 ${nights} noche${nights!==1?'s':''}\n\n¿Está disponible para esas fechas?`;
+  window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+});
+
+document.getElementById('emailBtn').addEventListener('click', () => {
+  if (!selStart || !selEnd) return;
+  const nights = Math.round((selEnd - selStart) / 86400000);
+  const subject = `Consulta reserva Guadalajara 12 — ${fmtLong(selStart)}`;
+  const body = `Hola,\n\nMe gustaría consultar disponibilidad para Guadalajara 12.\n\nEntrada: ${fmtLong(selStart)}\nSalida:  ${fmtLong(selEnd)}\nNoches:  ${nights}\n\n¿Está disponible para esas fechas?\n\nGracias.`;
+  window.open(`mailto:${EMAIL_ADDRESS}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+});
+document.getElementById('waCancel').addEventListener('click', clearSelection);
+
+// ── Render ──
+function renderAll() {
+  document.getElementById('yearLabel').textContent = displayYear;
+  const g = document.getElementById('monthsGrid');
+  g.innerHTML = '';
+  for (let m = 0; m < 12; m++) g.appendChild(renderMonth(displayYear, m));
+}
+
+function renderMonth(yr, mo) {
+  const now = new Date(); now.setHours(0,0,0,0);
+  const tY = now.getFullYear(), tM = now.getMonth(), tD = now.getDate();
+  const offset = (() => { const fd = new Date(yr, mo, 1).getDay(); return fd===0?6:fd-1; })();
+  const total  = new Date(yr, mo+1, 0).getDate();
+  let av = 0, bk = 0;
+  for (let d = 1; d <= total; d++) { if (new Date(yr,mo,d) >= now) { isBooked(yr,mo,d) ? bk++ : av++; } }
+
+  const card = document.createElement('div');
+  card.className = 'month-card';
+  card.innerHTML = `
+    <div class="month-header">${MONTHS[mo]} ${yr}</div>
+    <div class="cal-grid">
+      <div class="day-headers">${DAYS.map(d=>`<div class="day-header">${d}</div>`).join('')}</div>
+      <div class="days-grid" id="dg-${yr}-${mo}"></div>
+    </div>
+    <div class="stats-bar">
+      <div class="stat"><span class="stat-number avail">${av}</span><span class="stat-label">Disponibles</span></div>
+      <div class="stat"><span class="stat-number taken">${bk}</span><span class="stat-label">Ocupados</span></div>
+    </div>`;
+
+  const dg = card.querySelector(`#dg-${yr}-${mo}`);
+  for (let i = 0; i < offset; i++) { const e = document.createElement('div'); e.className='day-cell empty'; dg.appendChild(e); }
+
+  for (let d = 1; d <= total; d++) {
+    const k      = toKey(yr, mo, d);
+    const cell   = document.createElement('div');
+    const dt     = new Date(yr, mo, d);
+    const isPast = dt < now;
+    const isIcal = !!icalDates[k];
+    const booked = isBooked(yr, mo, d);
+    const isToday = yr===tY && mo===tM && d===tD;
+    const iStart = selStart && sameDay(dt, selStart);
+    const iEnd   = selEnd   && sameDay(dt, selEnd);
+    const iRange = !isPast && !booked && selStart && selEnd && dt > selStart && dt < selEnd;
+
+    let cls = 'day-cell';
+    if (isPast)       cls += ' past';
+    else if (booked)  cls += ' booked' + (isIcal ? ' from-ical' : '');
+    else              cls += ' available';
+    if (isToday)      cls += ' today';
+    if (iStart)       cls += ' sel-start';
+    if (iEnd)         cls += ' sel-end';
+    if (iRange)       cls += ' sel-range';
+
+    cell.className = cls;
+    cell.textContent = d;
+    if (isIcal && !isPast) cell.title = 'Reservado vía Airbnb';
+    if (!isPast && !booked) cell.addEventListener('click', () => handleDayClick(yr, mo, d));
+    else if (!isPast && booked && !isIcal && logged) cell.addEventListener('click', () => toggleManual(yr, mo, d));
+    dg.appendChild(cell);
+  }
+  return card;
+}
+
+function toggleManual(y, m, d) {
+  const k = toKey(y, m, d);
+  if (icalDates[k]) return;
+  if (manual[k]) { delete manual[k]; showToast('✓ Disponible'); }
+  else            { manual[k] = true; showToast('✗ Ocupado'); }
+  saveJ('avail_manual_v2', manual);
+  renderAll();
+}
+
+// ── Admin ──
+function openAdmin() {
+  document.getElementById('adminOverlay').classList.add('visible');
+  logged ? showConfig() : showLogin();
+}
+function closeAdmin() {
+  document.getElementById('adminOverlay').classList.remove('visible');
+  setTimeout(() => { if (!logged) showLogin(); }, 300);
+}
+document.getElementById('adminClose').addEventListener('click', closeAdmin);
+document.getElementById('adminOverlay').addEventListener('click', e => { if (e.target.id==='adminOverlay') closeAdmin(); });
+
+function showLogin() {
+  document.getElementById('viewLogin').style.display = '';
+  document.getElementById('viewConfig').style.display = 'none';
+  document.getElementById('adminPwd').value = '';
+  document.getElementById('loginError').textContent = '';
+  setTimeout(() => document.getElementById('adminPwd').focus(), 120);
+}
+document.getElementById('loginBtn').addEventListener('click', doLogin);
+document.getElementById('adminPwd').addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
+function doLogin() {
+  if (document.getElementById('adminPwd').value === ADMIN_PASSWORD) { logged = true; showConfig(); }
+  else { document.getElementById('loginError').textContent = 'Contraseña incorrecta.'; document.getElementById('adminPwd').select(); }
+}
+document.getElementById('logoutBtn').addEventListener('click', () => { logged = false; closeAdmin(); });
+
+function showConfig() {
+  document.getElementById('viewLogin').style.display = 'none';
+  document.getElementById('viewConfig').style.display = '';
+  refreshConfigUI();
+}
+
+async function refreshConfigUI() {
+  let url = null;
+  try { url = await sbGet(); } catch(e) { console.warn(e); }
+  document.getElementById('icalUrlInput').value = url || '';
+  if (url) {
+    document.getElementById('icalIcon').textContent        = '✅';
+    document.getElementById('icalStatusTitle').textContent = 'Calendario vinculado';
+    document.getElementById('icalStatusDesc').textContent  = 'URL guardada en la nube — funciona en todos los dispositivos.';
+    document.getElementById('icalUrlDisplay').textContent  = url.length>55 ? url.slice(0,55)+'…' : url;
+    document.getElementById('adminMeta').textContent       = 'Se sincroniza automáticamente al abrir la página.';
+  } else {
+    document.getElementById('icalIcon').textContent        = '📅';
+    document.getElementById('icalStatusTitle').textContent = 'Sin calendario vinculado';
+    document.getElementById('icalStatusDesc').textContent  = 'Añade la URL iCal de tu anuncio en Airbnb.';
+    document.getElementById('icalUrlDisplay').textContent  = '';
+    document.getElementById('adminMeta').textContent       = '';
+  }
+}
+
+function updateSyncBadge(urlOrBool) {
+  const badge = document.getElementById('syncBadge');
+  if (urlOrBool) { badge.style.display = 'flex'; }
+  else           { badge.style.display = 'none'; }
+}
+
+// ── Sync ──
+document.getElementById('syncBtn').addEventListener('click', async () => {
+  const url = document.getElementById('icalUrlInput').value.trim();
+  if (!url) { showToast('⚠️ Introduce la URL iCal'); return; }
+  const btn = document.getElementById('syncBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Guardando y sincronizando…';
+  try {
+    await sbSet(url);                          // Guardar URL en Supabase
+    await fetchAndParseIcal(url);              // Sincronizar iCal via proxy
+    await sbSetDates(JSON.stringify(icalDates)); // Guardar fechas en Supabase
+    refreshConfigUI(); updateSyncBadge(url); renderAll();
+    showToast('✓ Sincronizado. GitHub Actions actualizará automáticamente cada hora.');
+  } catch(err) {
+    console.error(err); showToast('❌ Error. Comprueba la URL o la conexión.');
+  } finally { btn.disabled = false; btn.textContent = 'Sincronizar calendario'; }
+});
+
+document.getElementById('clearBtn').addEventListener('click', async () => {
+  try { await sbClear(); } catch(e) { console.warn(e); }
+  icalDates = {};
+  refreshConfigUI(); updateSyncBadge(null); renderAll();
+  showToast('Calendario desvinculado');
+});
+
+// ── iCal ──
+async function fetchAndParseIcal(url) {
+  let lastErr;
+  for (const proxyFn of CORS_PROXIES) {
+    try {
+      const res = await fetch(proxyFn(url), { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      if (!text.includes('BEGIN:VCALENDAR')) throw new Error('Respuesta no valida');
+      icalDates = parseIcal(text);
+      return;
+    } catch(e) {
+      console.warn('Proxy fallo, probando siguiente...', e.message);
+      lastErr = e;
+    }
+  }
+  throw lastErr;
+}
+
+function parseIcal(text) {
+  const result = {}; const blocks = text.split('BEGIN:VEVENT'); blocks.shift();
+  for (const blk of blocks) {
+    const ds = getP(blk,'DTSTART'), de = getP(blk,'DTEND');
+    if (!ds||!de) continue;
+    const s = icalDt(ds), e = icalDt(de);
+    if (!s||!e) continue;
+    const cur = new Date(s);
+    while (cur < e) { result[toKey(cur.getFullYear(),cur.getMonth(),cur.getDate())] = true; cur.setDate(cur.getDate()+1); }
+  }
+  return result;
+}
+function getP(t,p) { const m=t.match(new RegExp(p+'(?:;[^:]*)?:([^\\r\\n]+)')); return m?m[1].trim():null; }
+function icalDt(s) { const d=s.replace(/T.*/,''); if(d.length!==8) return null; return new Date(+d.slice(0,4),+d.slice(4,6)-1,+d.slice(6,8)); }
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 1900);
+}
+
+// ── Nav ──
+document.getElementById('prevYear').addEventListener('click', () => { displayYear--; renderAll(); });
+document.getElementById('nextYear').addEventListener('click', () => { displayYear++; renderAll(); });
+
+// ── Init: cargar fechas desde dates.json (generado por GitHub Actions) ──
+(async () => {
+  renderAll(); updateSelectionUI();
+  try {
+    const res = await fetch('./dates.json?t=' + Date.now());
+    if (!res.ok) throw new Error('No se pudo cargar dates.json');
+    const data = await res.json();
+    if (data.dates && Object.keys(data.dates).length > 0) {
+      icalDates = data.dates;
+      renderAll();
+      updateSyncBadge(true);
+      if (data.updatedAt) {
+        document.getElementById('syncLabel').textContent =
+          'iCal · ' + new Date(data.updatedAt).toLocaleDateString('es-ES', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
+      }
+    }
+  } catch(e) { console.warn('No se pudieron cargar fechas:', e.message); }
+})();
+</script>
+</body>
+</html>
