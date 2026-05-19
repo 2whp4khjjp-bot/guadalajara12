@@ -1,8 +1,4 @@
 // scripts/sync-ical.js
-// Este script descarga el calendario iCal de Airbnb y genera dates.json
-// Se ejecuta via GitHub Actions cada hora automaticamente
-// También puedes ejecutarlo manualmente: node scripts/sync-ical.js
-
 import fetch from 'node-fetch';
 import fs from 'fs';
 import path from 'path';
@@ -10,16 +6,10 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// ── CONFIGURACIÓN ──────────────────────────────────────────
-// La URL iCal se lee de la variable de entorno ICAL_URL
-// Configúrala en GitHub → Settings → Secrets → ICAL_URL
 const ICAL_URL = process.env.ICAL_URL;
-// ───────────────────────────────────────────────────────────
 
 if (!ICAL_URL) {
   console.error('❌ Variable de entorno ICAL_URL no definida.');
-  console.error('   Añádela en GitHub → Settings → Secrets → Actions → New secret');
-  console.error('   Nombre: ICAL_URL   Valor: tu URL iCal de Airbnb');
   process.exit(1);
 }
 
@@ -27,20 +17,16 @@ async function parseIcal(text) {
   const dates = {};
   const blocks = text.split('BEGIN:VEVENT');
   blocks.shift();
-
   for (const blk of blocks) {
     const ds = getProp(blk, 'DTSTART');
     const de = getProp(blk, 'DTEND');
     if (!ds || !de) continue;
-
     const start = icalDate(ds);
     const end   = icalDate(de);
     if (!start || !end) continue;
-
     const cur = new Date(start);
     while (cur < end) {
-      const key = toKey(cur.getFullYear(), cur.getMonth(), cur.getDate());
-      dates[key] = true;
+      dates[toKey(cur.getFullYear(), cur.getMonth(), cur.getDate())] = true;
       cur.setDate(cur.getDate() + 1);
     }
   }
@@ -65,7 +51,15 @@ function toKey(y, m, d) {
 async function main() {
   console.log('🔄 Sincronizando calendario iCal...');
 
-  const res = await fetch(ICAL_URL);
+  const res = await fetch(ICAL_URL, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'text/calendar, text/plain, */*',
+      'Accept-Language': 'es-ES,es;q=0.9',
+      'Cache-Control': 'no-cache',
+    }
+  });
+
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const text = await res.text();
 
@@ -76,11 +70,7 @@ async function main() {
   const dates = await parseIcal(text);
   const count = Object.keys(dates).length;
 
-  const output = {
-    updatedAt: new Date().toISOString(),
-    dates
-  };
-
+  const output = { updatedAt: new Date().toISOString(), dates };
   const outPath = path.join(__dirname, '..', 'dates.json');
   fs.writeFileSync(outPath, JSON.stringify(output, null, 2));
 
