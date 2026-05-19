@@ -1,6 +1,7 @@
 {
   "name": "guadalajara12",
   "version": "1.0.0",
+  "type": "module",
   "description": "Calendario de disponibilidad para Guadalajara 12",
   "scripts": {
     "dev": "npx serve . -p 3000",
