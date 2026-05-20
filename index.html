@@ -469,17 +469,16 @@ function selectGuestType(type) {
   document.querySelectorAll('.guest-option').forEach(b => {
     b.classList.toggle('selected', b.dataset.type === type);
   });
-  document.getElementById('referralField').style.display = type === 'referral' ? 'block' : 'none';
+  document.getElementById('referralField').style.display = (type === 'referral' || type === 'returning') ? 'block' : 'none';
+  document.getElementById('referralName').placeholder = type === 'referral' ? '¿Quién te ha recomendado?' : '¿Cómo te llamas?';
   document.getElementById('guestWaBtn').disabled = false;
   document.getElementById('guestEmailBtn').disabled = false;
 }
 
 function guestInfo() {
-  if (guestType === 'returning') return '🏠 Huésped anterior';
-  if (guestType === 'referral') {
-    const name = document.getElementById('referralName').value.trim();
-    return name ? `⭐ Recomendado por: ${name}` : '⭐ Viene recomendado';
-  }
+  const name = document.getElementById('referralName').value.trim();
+  if (guestType === 'returning') return name ? `🏠 Huésped anterior: ${name}` : '🏠 Huésped anterior';
+  if (guestType === 'referral') return name ? `⭐ Recomendado por: ${name}` : '⭐ Viene recomendado';
   return '👋 Primera vez';
 }
 
