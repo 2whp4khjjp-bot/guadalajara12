@@ -136,6 +136,34 @@
   .spinner { display:inline-block; width:13px; height:13px; border:2px solid rgba(255,255,255,0.2); border-top-color:white; border-radius:50%; animation:spin 0.7s linear infinite; margin-right:0.5rem; vertical-align:middle; }
   @keyframes spin { to { transform:rotate(360deg); } }
   @media(max-width:600px) { .months-grid { grid-template-columns:1fr; } .wa-bar { padding:0.85rem 1rem; } }
+
+  /* GUEST MODAL */
+  .guest-overlay { position:fixed; inset:0; z-index:800; background:rgba(16,16,16,0.75); backdrop-filter:blur(8px); display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.25s; padding:1rem; }
+  .guest-overlay.visible { opacity:1; pointer-events:all; }
+  .guest-panel { background:var(--white); border-radius:20px; padding:2rem 1.5rem 1.5rem; width:min(480px,100%); transform:translateY(30px); transition:transform 0.3s cubic-bezier(0.34,1.4,0.64,1); max-height:90vh; overflow-y:auto; }
+  .guest-overlay.visible .guest-panel { transform:translateY(0); }
+  .guest-title { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:600; color:var(--charcoal); margin-bottom:0.3rem; }
+  .guest-subtitle { font-size:0.82rem; color:var(--mid); margin-bottom:1.2rem; }
+  .guest-options { display:flex; flex-direction:column; gap:0.6rem; margin-bottom:1rem; }
+  .guest-option { display:flex; align-items:center; gap:0.75rem; padding:0.85rem 1rem; border:2px solid var(--sand); border-radius:12px; cursor:pointer; transition:all 0.15s; font-size:0.9rem; font-weight:500; color:var(--charcoal); background:var(--white); text-align:left; width:100%; }
+  .guest-option:hover { border-color:var(--forest); background:rgba(58,82,68,0.04); }
+  .guest-option.selected { border-color:var(--forest); background:rgba(58,82,68,0.08); color:var(--forest); }
+  .guest-option-icon { font-size:1.2rem; flex-shrink:0; }
+  .guest-field { margin-bottom:1rem; }
+  .guest-field label { font-size:0.73rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--mid); margin-bottom:0.4rem; display:block; font-weight:500; }
+  .guest-field input, .guest-field select { width:100%; border:2px solid var(--sand); border-radius:10px; padding:0.8rem 1rem; font-family:'DM Sans',sans-serif; font-size:0.9rem; outline:none; transition:border-color 0.2s; color:var(--charcoal); background:var(--white); }
+  .guest-field input:focus, .guest-field select:focus { border-color:var(--forest); }
+  .guest-field input::placeholder { color:var(--light); }
+  .guest-send-btns { display:flex; gap:0.6rem; margin-top:0.5rem; }
+  .guest-send-btn { flex:1; color:white; border:none; border-radius:12px; padding:0.9rem 1rem; font-family:'DM Sans',sans-serif; font-size:0.88rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.4rem; transition:all 0.15s; }
+  .guest-send-btn.wa { background:var(--wa); }
+  .guest-send-btn.wa:hover { background:var(--wa-dark); }
+  .guest-send-btn.em { background:var(--email); }
+  .guest-send-btn.em:hover { background:var(--email-dark); }
+  .guest-send-btn:disabled { background:#ccc; cursor:not-allowed; }
+  .guest-send-btn svg { width:16px; height:16px; fill:white; flex-shrink:0; }
+  .guest-cancel { width:100%; background:none; border:none; color:var(--light); font-family:'DM Sans',sans-serif; font-size:0.82rem; cursor:pointer; padding:0.6rem; margin-top:0.3rem; transition:color 0.15s; }
+  .guest-cancel:hover { color:var(--terracotta); }
 </style>
 </head>
 <body>
@@ -198,6 +226,66 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- GUEST MODAL -->
+<div class="guest-overlay" id="guestOverlay">
+  <div class="guest-panel">
+    <div class="guest-title">Antes de enviar tu consulta</div>
+    <div class="guest-subtitle">Cuéntanos un poco sobre ti</div>
+
+    <div class="guest-options">
+      <button class="guest-option" data-type="new" onclick="selectGuestType('new')">
+        <span class="guest-option-icon">👋</span>
+        <span>Es mi primera vez</span>
+      </button>
+      <button class="guest-option" data-type="returning" onclick="selectGuestType('returning')">
+        <span class="guest-option-icon">🏠</span>
+        <span>Ya me he alojado antes</span>
+      </button>
+      <button class="guest-option" data-type="referral" onclick="selectGuestType('referral')">
+        <span class="guest-option-icon">⭐</span>
+        <span>Vengo recomendado</span>
+      </button>
+    </div>
+
+    <div class="guest-field" id="nameField" style="display:none">
+      <label id="nameLabel">¿Cómo te llamas?</label>
+      <input type="text" id="guestName" placeholder="Tu nombre">
+    </div>
+
+    <div class="guest-field" id="referralField" style="display:none">
+      <label>¿Quién te ha recomendado?</label>
+      <input type="text" id="referralName" placeholder="Nombre de quien te recomendó">
+    </div>
+
+    <div class="guest-field">
+      <label>Número de personas</label>
+      <select id="guestPeople">
+        <option value="">Selecciona...</option>
+        <option value="1">1 persona</option>
+        <option value="2">2 personas</option>
+        <option value="3">3 personas</option>
+        <option value="4">4 personas</option>
+        <option value="5">5 personas</option>
+        <option value="6">6 personas</option>
+        <option value="7">7 personas</option>
+        <option value="8+">8 o más personas</option>
+      </select>
+    </div>
+
+    <div class="guest-send-btns">
+      <button class="guest-send-btn wa" id="guestWaBtn" disabled onclick="sendGuest('wa')">
+        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        WhatsApp
+      </button>
+      <button class="guest-send-btn em" id="guestEmailBtn" disabled onclick="sendGuest('email')">
+        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+        Email
+      </button>
+    </div>
+    <button class="guest-cancel" onclick="closeGuestModal()">Cancelar</button>
+  </div>
+</div>
+
 <!-- ADMIN OVERLAY -->
 <div class="admin-overlay" id="adminOverlay">
   <div class="admin-panel">
@@ -241,7 +329,7 @@
         </div>
         <div class="ical-actions">
           <button class="admin-btn" id="syncBtn">Sincronizar calendario</button>
-          <button class="admin-btn-sec" id="clearBtn">Desvincular calendario</button>
+<button class="admin-btn-sec" id="clearBtn">Desvincular calendario</button>
           <button class="admin-btn-sec" id="logoutBtn">Cerrar sesión</button>
         </div>
         <p class="admin-meta" id="adminMeta"></p>
@@ -255,6 +343,7 @@
 //  CONFIGURACIÓN
 // ════════════════════════════════════════════
 const ADMIN_PASSWORD  = 'admin0717';  // ⚠️ Cambia antes de publicar
+
 const CORS_PROXIES = [
   url => `/.netlify/functions/ical-proxy?url=${encodeURIComponent(url)}`,
   url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
@@ -383,18 +472,80 @@ function fmtLong(dt) { return dt.toLocaleDateString('es-ES', { day:'numeric', mo
 
 document.getElementById('waBtn').addEventListener('click', () => {
   if (!selStart || !selEnd) return;
-  const nights = Math.round((selEnd - selStart) / 86400000);
-  const msg = `Hola! Me gustaría reservar Guadalajara 12.\n\n📅 Entrada: ${fmtLong(selStart)}\n📅 Salida: ${fmtLong(selEnd)}\n🌙 ${nights} noche${nights!==1?'s':''}\n\n¿Está disponible para esas fechas?`;
-  window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+  openGuestModal();
 });
 
 document.getElementById('emailBtn').addEventListener('click', () => {
   if (!selStart || !selEnd) return;
-  const nights = Math.round((selEnd - selStart) / 86400000);
-  const subject = `Consulta reserva Guadalajara 12 — ${fmtLong(selStart)}`;
-  const body = `Hola,\n\nMe gustaría consultar disponibilidad para Guadalajara 12.\n\nEntrada: ${fmtLong(selStart)}\nSalida:  ${fmtLong(selEnd)}\nNoches:  ${nights}\n\n¿Está disponible para esas fechas?\n\nGracias.`;
-  window.open(`mailto:${EMAIL_ADDRESS}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+  openGuestModal();
 });
+
+// ── Guest modal ──
+let guestType = null;
+
+function openGuestModal() {
+  guestType = null;
+  document.querySelectorAll('.guest-option').forEach(b => b.classList.remove('selected'));
+  document.getElementById('nameField').style.display = 'none';
+  document.getElementById('referralField').style.display = 'none';
+  document.getElementById('guestName').value = '';
+  document.getElementById('referralName').value = '';
+  document.getElementById('guestPeople').value = '';
+  document.getElementById('guestWaBtn').disabled = true;
+  document.getElementById('guestEmailBtn').disabled = true;
+  document.getElementById('guestOverlay').classList.add('visible');
+}
+
+function closeGuestModal() {
+  document.getElementById('guestOverlay').classList.remove('visible');
+}
+
+function selectGuestType(type) {
+  guestType = type;
+  document.querySelectorAll('.guest-option').forEach(b => {
+    b.classList.toggle('selected', b.dataset.type === type);
+  });
+  document.getElementById('nameField').style.display = (type === 'returning' || type === 'new') ? 'block' : 'none';
+  document.getElementById('referralField').style.display = type === 'referral' ? 'block' : 'none';
+  document.getElementById('nameLabel').textContent = type === 'returning' ? '¿Cómo te llamas?' : '¿Cómo te llamas?';
+  checkGuestReady();
+}
+
+document.getElementById('guestPeople').addEventListener('change', checkGuestReady);
+
+function checkGuestReady() {
+  const ready = guestType && document.getElementById('guestPeople').value;
+  document.getElementById('guestWaBtn').disabled = !ready;
+  document.getElementById('guestEmailBtn').disabled = !ready;
+}
+
+function guestInfo() {
+  const name     = document.getElementById('guestName').value.trim();
+  const referral = document.getElementById('referralName').value.trim();
+  const people   = document.getElementById('guestPeople').value;
+  let who = '';
+  if (guestType === 'returning') who = name ? `🏠 Huésped anterior: ${name}` : '🏠 Huésped anterior';
+  else if (guestType === 'referral') who = referral ? `⭐ Recomendado por: ${referral}` : '⭐ Viene recomendado';
+  else who = name ? `👋 Primera vez — ${name}` : '👋 Primera vez';
+  return { who, people };
+}
+
+function sendGuest(channel) {
+  if (!selStart || !selEnd || !guestType) return;
+  const nights = Math.round((selEnd - selStart) / 86400000);
+  const { who, people } = guestInfo();
+  const peopleText = people ? `👥 Personas: ${people}` : '';
+  closeGuestModal();
+
+  if (channel === 'wa') {
+    const msg = `Hola! Me gustaría reservar Guadalajara 12.\n\n📅 Entrada: ${fmtLong(selStart)}\n📅 Salida: ${fmtLong(selEnd)}\n🌙 ${nights} noche${nights!==1?'s':''}\n${peopleText}\n\n${who}\n\n¿Está disponible para esas fechas?`;
+    window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+  } else {
+    const subject = `Consulta reserva Guadalajara 12 — ${fmtLong(selStart)}`;
+    const body = `Hola,\n\nMe gustaría consultar disponibilidad para Guadalajara 12.\n\nEntrada: ${fmtLong(selStart)}\nSalida:  ${fmtLong(selEnd)}\nNoches:  ${nights}\n${peopleText}\n${who}\n\n¿Está disponible para esas fechas?\n\nGracias.`;
+    window.open(`mailto:${EMAIL_ADDRESS}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+  }
+}
 document.getElementById('waCancel').addEventListener('click', clearSelection);
 
 // ── Render ──
@@ -517,6 +668,8 @@ function doLogin() {
     document.getElementById('adminPwd').select();
   }
 }
+
+
 document.getElementById('logoutBtn').addEventListener('click', () => {
   logged = false;
   document.getElementById('adminBar').classList.remove('visible');
